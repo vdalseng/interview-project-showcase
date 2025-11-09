@@ -1,0 +1,102 @@
+name: Auto-Merge Pull Request on Approval
+on:
+  pull_request_review:
+    types: [submitted]
+  workflow_dispatch:
+
+permissions:
+  pull-requests: write
+  contents: write
+
+env:
+  PR_NUMBER: ${{ github.event.pull_request.number }}
+  PR_URL: ${{ github.event.pull_request.html_url }}
+  PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+  PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+
+  REVIEWER: ${{ github.event.review.user.login }}
+  REVIEW_STATE: ${{ github.event.review.state }}
+  REPOSITORY: ${{ github.repository }}
+
+jobs:
+  auto-merge:
+    runs-on: ubuntu-latest
+    if: github.event.review.state == 'approved'
+
+    steps:
+      - name: Print event and PR details
+        run: |
+          echo "Event: ${{ github.event_name }} | Triggered by: ${{ github.actor }}"
+          echo "Repository: $REPOSITORY"
+          echo ""
+          echo "PR #$PR_NUMBER: $PR_URL"
+          echo "Author: $PR_AUTHOR | Head SHA: $PR_HEAD_SHA"
+          echo ""
+          echo "Reviewer: $REVIEWER | State: $REVIEW_STATE"
+
+      - name: Verify reviewer is not PR author
+        run: |
+          if [ "$REVIEWER" == "$PR_AUTHOR" ]; then
+            echo "::error::❌ Self-approval not allowed"
+            exit 1
+          fi
+          echo "::notice::✅ Valid reviewer"
+
+      - name: Check workflow status
+        env:
+            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "Checking workflow status for commit: $PR_HEAD_SHA"
+          
+          # Get all check runs for the PR's head commit
+          CHECK_RUNS=$(gh api repos/$REPOSITORY/commits/$PR_HEAD_SHA/check-runs \
+            --jq '.check_runs[] | select(.name != "Auto-Merge Pull Request on Approval") | "\(.name):\(.status):\(.conclusion // "null")"')
+          
+          if [ -z "$CHECK_RUNS" ]; then
+            echo "::warning::⚠️ No check runs found for this commit"
+            exit 0
+          fi
+          
+          echo "Check runs:"
+          echo "$CHECK_RUNS"
+          echo ""
+          
+          HAS_PENDING=false
+          HAS_FAILURE=false
+          
+          while IFS= read -r CHECK; do
+            NAME=$(echo "$CHECK" | cut -d':' -f1)
+            STATUS=$(echo "$CHECK" | cut -d':' -f2)
+            CONCLUSION=$(echo "$CHECK" | cut -d':' -f3)
+            
+            if [ "$STATUS" != "completed" ]; then
+              echo "::warning::⏳ Pending: $NAME"
+              HAS_PENDING=true
+            elif [ "$CONCLUSION" == "failure" ] || [ "$CONCLUSION" == "cancelled" ]; then
+              echo "::error::❌ Failed: $NAME"
+              HAS_FAILURE=true
+            else
+              echo "::notice::✅ Passed: $NAME"
+            fi
+          done <<< "$CHECK_RUNS"
+          
+          echo ""
+          
+          if [ "$HAS_FAILURE" == "true" ]; then
+            echo "::error::❌ One or more workflows failed"
+            exit 1
+          fi
+          
+          if [ "$HAS_PENDING" == "true" ]; then
+            echo "::warning::⏳ Workflows still pending - auto-merge will wait"
+          else
+            echo "::notice::✅ All workflows completed successfully"
+          fi
+
+      - name: Enable auto-merge
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "Enabling auto-merge for PR #$PR_NUMBER"
+          gh pr merge --auto --squash "$PR_URL"
+          echo "::notice::✅ Auto-merge enabled - PR will merge when all checks pass"

@@ -1,6 +1,90 @@
 version: 2
 updates:
+  # GitHub Actions - CI/CD workflow dependencies
   - package-ecosystem: "github-actions"
     directory: "/.github"
     schedule:
       interval: "weekly"
+
+    commit-message:
+      prefix: "fix"
+      prefix-development: "chore"
+      include: "scope"
+
+    open-pull-requests-limit: 2
+    rebase-strategy: "auto"
+
+    groups:
+      ci-actions:
+        patterns:
+          - "actions/*"
+      other:
+        patterns:
+          - "*"
+        exclude-patterns:
+          - "actions/*"
+  
+  # Docker - Container base images
+  - package-ecosystem: docker
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    
+    commit-message:
+      prefix: "fix"
+      prefix-development: "chore"
+      include: "scope"
+
+    open-pull-requests-limit: 2
+    rebase-strategy: "auto"
+
+  # NuGet - .NET package dependencies
+  - package-ecosystem: "nuget"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+
+    commit-message:
+      prefix: "fix"
+      prefix-development: "chore"
+      include: "scope"
+
+    open-pull-requests-limit: 2
+    rebase-strategy: "auto"
+
+    groups:
+      aspnetcore:
+        patterns:
+          - "Microsoft.AspNetCore*"
+          - "Microsoft.AspNetCore.*"
+        update-types:
+          - "minor"
+          - "patch"
+
+      microsoft-extensions:
+        patterns:
+          - "Microsoft.Extensions.*"
+        update-types:
+          - "minor"
+          - "patch"
+      
+      json-serialization:
+        patterns:
+          - "Newtonsoft.Json"
+          - "System.Text.Json"
+        update-types:
+          - "minor"
+          - "patch"
+      
+      other:
+        patterns:
+          - "*"
+        exclude-patterns:
+          - "Microsoft.AspNetCore*"
+          - "Microsoft.AspNetCore.*"
+          - "Microsoft.Extensions.*"
+          - "Newtonsoft.Json"
+          - "System.Text.Json"
+        update-types:
+          - "minor"
+          - "patch"
