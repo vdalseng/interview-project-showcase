@@ -98,5 +98,5 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           echo "Enabling auto-merge for PR #$PR_NUMBER"
-          gh pr merge --auto --squash "$PR_URL"
+          gh pr merge --auto --squash --delete-branch "$PR_URL"
           echo "::notice::✅ Auto-merge enabled - PR will merge when all checks pass"
