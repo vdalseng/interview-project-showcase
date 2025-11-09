@@ -1,0 +1,7 @@
+@MinimalApiDemo_HostAddress = http://localhost:5030
+
+GET {{MinimalApiDemo_HostAddress}}/games
+Accept: application/json
+
+###
+
