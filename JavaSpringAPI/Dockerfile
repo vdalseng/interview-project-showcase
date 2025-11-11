@@ -9,13 +9,13 @@ COPY mvnw pom.xml ./
 # Make mvnw executable
 RUN chmod +x ./mvnw
 
-# Download dependencies (cached layer)
-RUN ./mvnw dependency:go-offline -B
+# Download dependencies (cached layer) - suppressed output for CI
+RUN ./mvnw dependency:go-offline -B -q
 
 # Copy source code
 COPY src ./src
 
-# Build the application with reduced output
+# Build the application with parallel compilation
 RUN ./mvnw clean package -DskipTests -B -T 1C -q
 
 # Runtime stage
