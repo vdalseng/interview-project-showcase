@@ -9,6 +9,7 @@ on:
 
 env:
   API_IMAGE_NAME: minimalapi
+  SPRING_API_IMAGE_NAME: javaspringapi
 
 jobs:
   build-api:
@@ -34,6 +35,31 @@ jobs:
         with:
           name: ${{ env.API_IMAGE_NAME }}-image
           path: ${{ env.API_IMAGE_NAME }}.tar
+          retention-days: 3
+
+  build-spring-api:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Podman
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y podman
+
+      - name: Build JavaSpringAPI Podman image
+        run: podman build -t ${{ env.SPRING_API_IMAGE_NAME }}:latest .
+        working-directory: ./JavaSpringAPI
+
+      - name: Save JavaSpringAPI Podman image as artifact
+        run: podman save ${{ env.SPRING_API_IMAGE_NAME }}:latest -o ${{ env.SPRING_API_IMAGE_NAME }}.tar
+
+      - name: Upload JavaSpringAPI image
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.SPRING_API_IMAGE_NAME }}-image
+          path: ${{ env.SPRING_API_IMAGE_NAME }}.tar
           retention-days: 3
     
   trivy-scan-api:
