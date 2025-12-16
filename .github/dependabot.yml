@@ -4,7 +4,7 @@ updates:
   - package-ecosystem: "github-actions"
     directory: "/.github"
     schedule:
-      interval: "weekly"
+      interval: "monthly"
 
     commit-message:
       prefix: "fix"
@@ -28,7 +28,7 @@ updates:
   - package-ecosystem: docker
     directory: "/MinimalAPI"
     schedule:
-      interval: "weekly"
+      interval: "monthly"
     
     commit-message:
       prefix: "fix"
@@ -42,7 +42,7 @@ updates:
   - package-ecosystem: "nuget"
     directory: "/"
     schedule:
-      interval: "weekly"
+      interval: "monthly"
 
     commit-message:
       prefix: "fix"
@@ -93,7 +93,7 @@ updates:
   - package-ecosystem: "maven"
     directory: "/JavaSpringAPI"
     schedule:
-      interval: "weekly"
+      interval: "monthly"
 
     commit-message:
       prefix: "fix"
